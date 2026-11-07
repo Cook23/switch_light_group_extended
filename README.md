@@ -4,6 +4,8 @@ Home Assistant helper that creates switch and light groups with more ways to com
 
 Optionally, the group keeps its members in sync by itself (n-way switching, from the [Multicontrol](https://github.com/Cook23/Multicontrol) blueprints).
 
+The aim is a group that does what a group should do: keep its members in the same state, matching the wanted state, although the members differ (lost reports, Zigbee bindings, several sources of commands), while avoiding as far as possible any self-sustained oscillation.
+
 > Status: planned, not usable yet.
 
 ## Why
@@ -88,20 +90,25 @@ Option **synchronisation** (`none` by default): the group keeps its members in s
 | `none` | the group only computes its state and forwards its commands (built-in behaviour) |
 | `multicontrol` | every member is both source and target: the first unmasked change of a member to on or off is sent to all the other members |
 | `slave` | members are split into relays and slave relays (relays synchronised among themselves by native Zigbee bindings); the first unmasked change of a relay is sent to the other relays and to the slave relays; slave relays trigger nothing |
-| `hybrid` | as `slave`, plus the "switch press action" entities of switches running the [romasku/tuya-zigbee-switch](https://github.com/romasku/tuya-zigbee-switch) firmware: a press toggles the internal state and is sent to the relays (the slave relays follow through their bindings); after the masking delay, the slave relays are forced to the internal state (anti-desynchronisation) |
+| `hybrid` | the relays and slave relays of `slave`, plus the "switch press action" entities of switches running the [romasku/tuya-zigbee-switch](https://github.com/romasku/tuya-zigbee-switch) firmware: a press toggles the internal state and is sent to the relays (the slave relays follow through their bindings); after the masking delay, the slave relays are forced to the internal state (anti-desynchronisation); the propagation of relay changes of `slave` is a separate option |
 
 Common rules, as in Multicontrol:
 
-- masking: the first change that is not masked acts immediately; every later change re-arms the masking delay (setting, 1 s by default) and is ignored until the delay has passed without any change, so the echoes of the group's own commands cannot start a loop;
+- masking: the first change that is not masked acts immediately; every later change re-arms the masking delay (setting, 1 s by default) and is ignored until the delay has passed without any change, so the echoes of the group's own commands are ignored;
 - in `hybrid` mode, a press is never masked but starts the masking delay; the internal state is kept by the group itself (restored at restart), no `input_boolean` helper is needed;
 - the commands sent to the members follow the state of the source member (on/off, and brightness and colour for light groups).
 
-No loop by design: the commands sent to the members come only from events (an unmasked member change, a press, a command on the group), never from the computed group state. The group state shown in Home Assistant (state mode) is display only and does not feed back into the synchronisation:
+Oscillation: the functions are split in two kinds.
 
-- in `hybrid` mode, the internal state is separate from the group state: it changes only at a press, an unmasked relay change or a command on the group, and it is never set from the member states;
-- the anti-desynchronisation forces the slave relays to the internal state, not to the group state, so a stale report cannot be copied to the other members;
-- a command on the group (`turn_on`, `turn_off`, `toggle`) sets the internal state, is sent to all members and starts the masking delay, so its echoes are ignored;
-- the refresh of disagreeing members only reads states, it never sends on/off commands.
+Open loop, no oscillation possible, always available:
+
+- commands on the group (`turn_on`, `turn_off`, `toggle`): sent to all members, they set the internal state and start the masking delay;
+- in `hybrid` mode, presses: a press is an event of the button, not of a relay, and its commands never come back as a press;
+- in `hybrid` mode, the anti-desynchronisation: it forces the slave relays to the internal state, and the state of the slave relays is never read;
+- the refresh of disagreeing members: it only reads states, it never sends on/off commands;
+- the group state shown in Home Assistant (state mode): display only, it never feeds back into the synchronisation. The internal state of `hybrid` mode is separate from it and never set from the member states, so a stale report cannot be copied to the other members.
+
+Closed loop, protected only by the masking delay: the propagation of member changes to the other members (a member is both source and target). This covers the `multicontrol` and `slave` modes and the "propagate relay changes" option of `hybrid` mode. These functions can be disabled completely and are disabled by default (`none` synchronisation, option off in `hybrid`). Choosing one of them shows a warning in the config flow: "May cause oscillation. In case of problem, try increasing the masking delay."
 
 To decide in use: whether slave relays count in the state mode in `slave` and `hybrid` modes (Multicontrol never reads their state; the `last` mode relies on their reports).
 
@@ -122,7 +129,7 @@ Modelled on the built-in [Group](https://www.home-assistant.io/integrations/grou
   2. menu: "New group" or "Import from an existing group";
   3. import only: pick an existing Home Assistant group of the same type (UI or YAML); its members are read from its `entity_id` attribute;
   4. form: name, members, state mode and, for light groups, brightness and colour (default `same as state`), the refresh option and its delay, the synchronisation mode and its masking delay, with the members prefilled when importing;
-  5. `slave` and `hybrid` synchronisation only: slave relays and, for `hybrid`, the switch press action entities.
+  5. `slave` and `hybrid` synchronisation only: slave relays and, for `hybrid`, the switch press action entities and the "propagate relay changes" option (off by default). The oscillation warning is shown for `multicontrol`, `slave` and that option.
 
   The imported group is left untouched.
 - Entities: start from the built-in `group/switch.py` and `group/light.py` (`GroupEntity`, `SwitchGroup`, `LightGroup`). The `all` checkbox becomes a choice of the six state modes, light groups get the brightness and colour setting, and state restore is added for `last` and `majority_last`. `hide_members` is kept.
