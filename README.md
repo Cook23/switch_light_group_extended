@@ -48,6 +48,13 @@ In `last` mode, and for ties in `majority_last` mode:
 
 In every mode, `turn_on` / `turn_off` / `toggle` on the group are sent to all members, as with the built-in group.
 
+Option **refresh members that disagree** (off by default, any mode): when a member stays in a state different from the group state, the group asks it to report its state again, to catch a lost report.
+
+- it runs after a delay (setting, a few seconds by default) without any new member change, so that members still switching are not polled;
+- each disagreeing member is polled once per group state change, to avoid loops with a member that does not answer or keeps a different state;
+- the refresh uses `homeassistant.update_entity`, which reads the state from the device with ZHA; with Zigbee2MQTT, MQTT entities ignore it, so the group publishes a `get` request on the member's Zigbee2MQTT topic instead (to be confirmed during development);
+- the member's answer then updates the group state as any other change.
+
 For light groups, a second setting chooses how brightness and colour (colour mode, colour, colour temperature, effect) are computed from the members that are on. Its default, `same as state`, follows the state mode:
 
 | State mode | Brightness and colour with `same as state` |
@@ -84,7 +91,7 @@ Modelled on the built-in [Group](https://www.home-assistant.io/integrations/grou
   1. menu: group type, switch or light (as the built-in group);
   2. menu: "New group" or "Import from an existing group";
   3. import only: pick an existing Home Assistant group of the same type (UI or YAML); its members are read from its `entity_id` attribute;
-  4. form: name, members, state mode and, for light groups, brightness and colour (default `same as state`), with the members prefilled when importing. The imported group is left untouched.
+  4. form: name, members, state mode and, for light groups, brightness and colour (default `same as state`), the refresh option and its delay, with the members prefilled when importing. The imported group is left untouched.
 - Entities: start from the built-in `group/switch.py` and `group/light.py` (`GroupEntity`, `SwitchGroup`, `LightGroup`). The `all` checkbox becomes a choice of the six state modes, light groups get the brightness and colour setting, and state restore is added for `last` and `majority_last`. `hide_members` is kept.
 
 Like [Climate Group Helper](https://github.com/bjrnptrsn/climate_group_helper), it ships as a custom integration installable through HACS.
