@@ -48,16 +48,16 @@ In `last` mode, and for ties in `majority_last` mode:
 
 In every mode, `turn_on` / `turn_off` / `toggle` on the group are sent to all members, as with the built-in group.
 
-For light groups, brightness and colour (colour mode, colour, colour temperature, effect) follow the same mode, computed from the members that are on:
+For light groups, brightness and colour (colour mode, colour, colour temperature, effect) are computed from the members that are on:
 
 | Mode | Brightness and colour |
 |---|---|
-| `any`, `all` | as the built-in light group (mean brightness, mean colour) |
+| `any` | highest brightness; colour of that member |
+| `all` | lowest brightness; colour of that member |
 | `last` | values of the last member that changed |
-| `majority_on`, `majority_off` | most common value; built-in computation (mean) in case of a tie |
-| `majority_last` | most common value; value of the last member that changed in case of a tie |
+| `majority_on`, `majority_off`, `majority_last` | mean, as the built-in light group |
 
-In `last` and `majority_last` modes, a change of brightness or colour of a member that is on counts as a change of that member; the values are restored when Home Assistant restarts.
+In `last` mode, a change of brightness or colour of a member that is on counts as a change of that member; the values are restored when Home Assistant restarts.
 
 ## Installation (planned)
 
