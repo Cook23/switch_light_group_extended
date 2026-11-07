@@ -53,9 +53,12 @@ Through [HACS](https://hacs.xyz/), as a custom repository:
 
 ## Design
 
-Built on the same principle as [Climate Group Helper](https://github.com/bjrnptrsn/climate_group_helper): a separate integration with its own domain (`switch_light_group_extended`), created as a helper from the UI (config flow). The built-in group integration is left untouched.
+Modelled on the built-in [Group](https://www.home-assistant.io/integrations/group/) helpers of Home Assistant, as a separate integration with its own domain (`switch_light_group_extended`). The built-in group integration is left untouched.
 
-The entity code starts from the built-in `group/switch.py` and `group/light.py` of Home Assistant, with the `last` mode and state restore added.
+- Config flow: starts from the built-in `group/config_flow.py`. A menu picks the group type (switch or light), then one step asks for the name, the members and the mode. An options flow edits the group after creation.
+- Entities: start from the built-in `group/switch.py` and `group/light.py` (`GroupEntity`, `SwitchGroup`, `LightGroup`). The `all` checkbox becomes a mode choice (`any` / `all` / `last`), and state restore is added for `last` mode. `hide_members` is kept.
+
+Like [Climate Group Helper](https://github.com/bjrnptrsn/climate_group_helper), it ships as a custom integration installable through HACS.
 
 Planned layout:
 
