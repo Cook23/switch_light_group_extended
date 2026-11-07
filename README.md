@@ -48,16 +48,25 @@ In `last` mode, and for ties in `majority_last` mode:
 
 In every mode, `turn_on` / `turn_off` / `toggle` on the group are sent to all members, as with the built-in group.
 
-For light groups, brightness and colour (colour mode, colour, colour temperature, effect) are computed from the members that are on:
+For light groups, a second setting chooses how brightness and colour (colour mode, colour, colour temperature, effect) are computed from the members that are on. Its default, `same as state`, follows the state mode:
 
-| Mode | Brightness and colour |
+| State mode | Brightness and colour with `same as state` |
 |---|---|
-| `any` | highest brightness; colour of that member |
-| `all` | lowest brightness; colour of that member |
-| `last` | values of the last member that changed |
-| `majority_on`, `majority_off`, `majority_last` | mean, as the built-in light group |
+| `any` | `highest` |
+| `all` | `lowest` |
+| `last` | `last` |
+| `majority_on`, `majority_off`, `majority_last` | `mean` |
 
-In `last` mode, a change of brightness or colour of a member that is on counts as a change of that member; the values are restored when Home Assistant restarts.
+It can be set to another value to override this:
+
+| Brightness and colour | Values |
+|---|---|
+| `highest` | highest brightness; colour of that member |
+| `lowest` | lowest brightness; colour of that member |
+| `last` | values of the last member that changed |
+| `mean` | mean, as the built-in light group |
+
+With `last`, a change of brightness or colour of a member that is on counts as a change of that member; the values are restored when Home Assistant restarts.
 
 ## Installation (planned)
 
@@ -75,8 +84,8 @@ Modelled on the built-in [Group](https://www.home-assistant.io/integrations/grou
   1. menu: group type, switch or light (as the built-in group);
   2. menu: "New group" or "Import from an existing group";
   3. import only: pick an existing Home Assistant group of the same type (UI or YAML); its members are read from its `entity_id` attribute;
-  4. form: name, members and mode, with the members prefilled when importing. The imported group is left untouched.
-- Entities: start from the built-in `group/switch.py` and `group/light.py` (`GroupEntity`, `SwitchGroup`, `LightGroup`). The `all` checkbox becomes a mode choice (`any` / `all` / `last`), and state restore is added for `last` mode. `hide_members` is kept.
+  4. form: name, members, state mode and, for light groups, brightness and colour (default `same as state`), with the members prefilled when importing. The imported group is left untouched.
+- Entities: start from the built-in `group/switch.py` and `group/light.py` (`GroupEntity`, `SwitchGroup`, `LightGroup`). The `all` checkbox becomes a choice of the six state modes, light groups get the brightness and colour setting, and state restore is added for `last` and `majority_last`. `hide_members` is kept.
 
 Like [Climate Group Helper](https://github.com/bjrnptrsn/climate_group_helper), it ships as a custom integration installable through HACS.
 
