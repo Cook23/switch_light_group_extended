@@ -2,6 +2,8 @@
 
 Home Assistant helper that creates switch and light groups with more ways to compute the group state: **last change** (the group takes the on/off state of the member that changed last) and **majority** (the group takes the state of most of its members).
 
+Optionally, the group keeps its members in sync by itself (n-way switching, from the [Multicontrol](https://github.com/Cook23/Multicontrol) blueprints).
+
 > Status: planned, not usable yet.
 
 ## Why
@@ -50,7 +52,7 @@ In every mode, `turn_on` / `turn_off` / `toggle` on the group are sent to all me
 
 Option **refresh members that disagree** (off by default, any mode): when a member stays in a state different from the group state, the group asks it to report its state again, to catch a lost report.
 
-- it runs after a delay (setting, a few seconds by default) without any new member change, so that members still switching are not polled;
+- it runs after a delay (setting, a few seconds by default) without any new member change, so that members still switching are not polled; with a synchronisation mode, the delay starts after the end of the masking delay;
 - each disagreeing member is polled once per group state change, to avoid loops with a member that does not answer or keeps a different state;
 - the refresh method depends on the member, with nothing to configure:
   - ZHA and other polling integrations: `homeassistant.update_entity`, which reads the state from the device;
@@ -77,6 +79,28 @@ It can be set to another value to override this:
 
 With `last`, a change of brightness or colour of a member that is on counts as a change of that member; the values are restored when Home Assistant restarts.
 
+### Synchronisation (Multicontrol)
+
+Option **synchronisation** (`none` by default): the group keeps its members in sync by itself, without loops, with the three behaviours of the [Multicontrol](https://github.com/Cook23/Multicontrol) blueprints, so that n-way switching from several sources (physical switches, Zigbee bindings, Home Assistant) needs no automation.
+
+| Synchronisation | Behaviour |
+|---|---|
+| `none` | the group only computes its state and forwards its commands (built-in behaviour) |
+| `multicontrol` | every member is both source and target: the first unmasked change of a member to on or off is sent to all the other members |
+| `slave` | members are split into relays and slave relays (relays synchronised among themselves by native Zigbee bindings); the first unmasked change of a relay is sent to the other relays and to the slave relays; slave relays trigger nothing |
+| `hybrid` | as `slave`, plus the "switch press action" entities of switches running the [romasku/tuya-zigbee-switch](https://github.com/romasku/tuya-zigbee-switch) firmware: a press toggles the internal state and is sent to the relays (the slave relays follow through their bindings); after the masking delay, the slave relays are forced to the internal state (anti-desynchronisation) |
+
+Common rules, as in Multicontrol:
+
+- masking: the first change that is not masked acts immediately; every later change re-arms the masking delay (setting, 1 s by default) and is ignored until the delay has passed without any change, so the echoes of the group's own commands cannot start a loop;
+- in `hybrid` mode, a press is never masked but starts the masking delay; the internal state is kept by the group itself (restored at restart), no `input_boolean` helper is needed;
+- the commands sent to the members follow the state of the source member (on/off, and brightness and colour for light groups).
+
+Open questions:
+
+- `hybrid` mode: whether the group state is the internal state, or still computed from the members with the state mode;
+- `slave` and `hybrid` modes: whether slave relays count in the state mode (Multicontrol never reads their state; the `last` mode relies on their reports).
+
 ## Installation (planned)
 
 Through [HACS](https://hacs.xyz/), as a custom repository:
@@ -93,7 +117,10 @@ Modelled on the built-in [Group](https://www.home-assistant.io/integrations/grou
   1. menu: group type, switch or light (as the built-in group);
   2. menu: "New group" or "Import from an existing group";
   3. import only: pick an existing Home Assistant group of the same type (UI or YAML); its members are read from its `entity_id` attribute;
-  4. form: name, members, state mode and, for light groups, brightness and colour (default `same as state`), the refresh option and its delay, with the members prefilled when importing. The imported group is left untouched.
+  4. form: name, members, state mode and, for light groups, brightness and colour (default `same as state`), the refresh option and its delay, the synchronisation mode and its masking delay, with the members prefilled when importing;
+  5. `slave` and `hybrid` synchronisation only: slave relays and, for `hybrid`, the switch press action entities.
+
+  The imported group is left untouched.
 - Entities: start from the built-in `group/switch.py` and `group/light.py` (`GroupEntity`, `SwitchGroup`, `LightGroup`). The `all` checkbox becomes a choice of the six state modes, light groups get the brightness and colour setting, and state restore is added for `last` and `majority_last`. `hide_members` is kept.
 
 Like [Climate Group Helper](https://github.com/bjrnptrsn/climate_group_helper), it ships as a custom integration installable through HACS.
