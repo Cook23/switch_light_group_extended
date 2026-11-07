@@ -55,7 +55,6 @@ Option **refresh members that disagree** (off by default, any mode): when a memb
 - the refresh method depends on the member, with nothing to configure:
   - ZHA and other polling integrations: `homeassistant.update_entity`, which reads the state from the device;
   - Zigbee2MQTT: MQTT entities ignore `update_entity`, so the group publishes `{"state": ""}` on `zigbee2mqtt/<device>/get` (`{"state_l1": ""}` for a multi-relay device, the endpoint being taken from the entity's unique ID, e.g. `0x…_switch_l1_zigbee2mqtt`). The device is addressed by its IEEE address, read from the Home Assistant device registry, so renaming it in Zigbee2MQTT does not break the refresh. Zigbee2MQTT then reads the attribute from the device and publishes the real state;
-  - to check during development: that Zigbee2MQTT accepts the IEEE address in the topic, and which attributes the romasku firmware answers to;
 - the member's answer then updates the group state as any other change.
 
 For light groups, a second setting chooses how brightness and colour (colour mode, colour, colour temperature, effect) are computed from the members that are on. Its default, `same as state`, follows the state mode:
