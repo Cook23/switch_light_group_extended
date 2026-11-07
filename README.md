@@ -1,6 +1,6 @@
 # Switch & Light Group Extended
 
-Home Assistant helper that creates switch and light groups with one more way to compute the group state: **last change**. The group takes the on/off state of the member that changed last.
+Home Assistant helper that creates switch and light groups with more ways to compute the group state: **last change** (the group takes the on/off state of the member that changed last) and **majority** (the group takes the state of most of its members).
 
 > Status: planned, not usable yet.
 
@@ -18,6 +18,8 @@ For members that are meant to be in the same state (n-way switches, switches kep
 
 In `last` mode, the group follows the last state change received from any member. With switches synchronised by Zigbee bindings, the bound switches always report the new state, even when the pressed switch's own report is lost, so the group shows the right state.
 
+In `majority` modes, one stale member is outvoted by the others as soon as the group has three members or more.
+
 The same request exists on the community forum: [Add "last changed sub-item" for group state](https://community.home-assistant.io/t/add-last-changed-sub-item-for-group-state/453758).
 
 ## Planned behaviour
@@ -31,8 +33,13 @@ Modes:
 | `any` | on if at least one member is on (same as the built-in group) |
 | `all` | on only if all members are on (same as the built-in group) |
 | `last` | state of the last member change to on or off |
+| `majority_on` | state of the majority of members; on in case of a tie |
+| `majority_off` | state of the majority of members; off in case of a tie |
+| `majority_last` | state of the majority of members; `last` state in case of a tie |
 
-In `last` mode:
+In `majority` modes, only members that are `on` or `off` are counted; `unavailable` and `unknown` members are left out.
+
+In `last` mode, and for ties in `majority_last` mode:
 
 - only changes to `on` or `off` are taken into account;
 - a change from `unavailable` or `unknown` (member coming back after a restart or a loss of connection) is ignored;
@@ -41,7 +48,7 @@ In `last` mode:
 
 In every mode, `turn_on` / `turn_off` / `toggle` on the group are sent to all members, as with the built-in group.
 
-Open question for light groups in `last` mode: whether brightness and colour follow the last changed member too, or only on/off.
+Open question for light groups in `last` and `majority` modes: whether brightness and colour follow the last changed member too, or only on/off.
 
 ## Installation (planned)
 
