@@ -4,7 +4,7 @@ Home Assistant helper that creates switch and light groups with more ways to com
 
 Optionally, the group keeps its members in sync by itself (n-way switching, from the [Multicontrol](https://github.com/Cook23/Multicontrol) blueprints).
 
-The aim is a group that does what a group should do: keep its members in the same state, matching the wanted state, although the members differ (lost reports, Zigbee bindings, several sources of commands), while avoiding as far as possible any self-sustained oscillation.
+The aim is a group that does what a group should do: keep its members in the same state, matching the wanted state, although the members differ (lost reports, Zigbee bindings, several sources of commands), while avoiding as far as possible any self-sustained oscillation; and, when the group loses its cohesion, report the state of its members as sensibly as possible (state modes).
 
 > Status: planned, not usable yet.
 
