@@ -96,10 +96,14 @@ Common rules, as in Multicontrol:
 - in `hybrid` mode, a press is never masked but starts the masking delay; the internal state is kept by the group itself (restored at restart), no `input_boolean` helper is needed;
 - the commands sent to the members follow the state of the source member (on/off, and brightness and colour for light groups).
 
-Open questions:
+No loop by design: the commands sent to the members come only from events (an unmasked member change, a press, a command on the group), never from the computed group state. The group state shown in Home Assistant (state mode) is display only and does not feed back into the synchronisation:
 
-- `hybrid` mode: whether the group state is the internal state, or still computed from the members with the state mode;
-- `slave` and `hybrid` modes: whether slave relays count in the state mode (Multicontrol never reads their state; the `last` mode relies on their reports).
+- in `hybrid` mode, the internal state is separate from the group state: it changes only at a press, an unmasked relay change or a command on the group, and it is never set from the member states;
+- the anti-desynchronisation forces the slave relays to the internal state, not to the group state, so a stale report cannot be copied to the other members;
+- a command on the group (`turn_on`, `turn_off`, `toggle`) sets the internal state, is sent to all members and starts the masking delay, so its echoes are ignored;
+- the refresh of disagreeing members only reads states, it never sends on/off commands.
+
+To decide in use: whether slave relays count in the state mode in `slave` and `hybrid` modes (Multicontrol never reads their state; the `last` mode relies on their reports).
 
 ## Installation (planned)
 
